@@ -1,58 +1,27 @@
+version: "3.8"
+
 services:
-  # 示例虚拟服务器1
-  user1-server:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: ${USER1_CONTAINER_NAME:-user1-server}
-    restart: unless-stopped
-    ports:
-      # SSH端口映射 (外部端口:内部端口)
-      - "${USER1_SSH_PORT:-6001}:22"
-      # 分配给用户的其他端口
-      - "${USER1_PORT_RANGE:-6002-6020}"
-    volumes:
-      # 持久化存储
-      - ./data/${USER1_CONTAINER_NAME:-user1-server}:/data
-      - ./scripts:/scripts
+  debian-vm:
+    container_name: ${CONTAINER_NAME}
+    build: .
+    restart: always
+    # 特权模式，允许 DinD
+    privileged: true
     environment:
-      - CONTAINER_NAME=${USER1_CONTAINER_NAME:-user1-server}
-      - ROOT_PASSWORD=${USER1_ROOT_PASSWORD:-StrongPassword1!}
-      - USERNAME=${USER1_USERNAME:-user1}
-      - USER_PASSWORD=${USER1_USER_PASSWORD:-UserPass1!}
-      - SSH_PORT=${USER1_SSH_PORT:-6001}
-      - PORT_RANGE=${USER1_PORT_RANGE:-6002-6020}
-      - CPU_LIMIT=${USER1_CPU_LIMIT:-2}
-      - MEMORY_LIMIT=${USER1_MEMORY_LIMIT:-2G}
-    cpus: ${USER1_CPU_LIMIT:-2}
-    mem_limit: ${USER1_MEMORY_LIMIT:-2G}
-
-  # 示例虚拟服务器2
-  user2-server:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: ${USER2_CONTAINER_NAME:-user2-server}
-    restart: unless-stopped
+      - ROOT_PASSWORD=${ROOT_PASSWORD}
     ports:
-      # SSH端口映射
-      - "${USER2_SSH_PORT:-6021}:22"
-      # 分配给用户的其他端口
-      - "${USER2_PORT_RANGE:-6022-6040}"
+      - "${SSH_PORT}:22"
+      - "${PORT_RANGE_START}-${PORT_RANGE_END}:${PORT_RANGE_START}-${PORT_RANGE_END}"
     volumes:
-      # 持久化存储
-      - ./data/${USER2_CONTAINER_NAME:-user2-server}:/data
-      - ./scripts:/scripts
-    environment:
-      - CONTAINER_NAME=${USER2_CONTAINER_NAME:-user2-server}
-      - ROOT_PASSWORD=${USER2_ROOT_PASSWORD:-StrongPassword2!}
-      - USERNAME=${USER2_USERNAME:-user2}
-      - USER_PASSWORD=${USER2_USER_PASSWORD:-UserPass2!}
-      - SSH_PORT=${USER2_SSH_PORT:-6021}
-      - PORT_RANGE=${USER2_PORT_RANGE:-6022-6040}
-      - CPU_LIMIT=${USER2_CPU_LIMIT:-2}
-      - MEMORY_LIMIT=${USER2_MEMORY_LIMIT:-2G}
-    cpus: ${USER2_CPU_LIMIT:-2}
-    mem_limit: ${USER2_MEMORY_LIMIT:-2G}
+      # 将宿主机当前目录下的 container/data 挂载到容器内的 /data
+      - ./container/data:/data
+      - ./container/root-home:/root
+    deploy:
+      resources:
+        limits:
+          cpus: "${CPU_LIMIT}"
+          memory: "${MEM_LIMIT}"
 
-  # 你可以按照相同的模式添加更多虚拟服务器
+volumes:
+  docker-data:
+  root-home:
